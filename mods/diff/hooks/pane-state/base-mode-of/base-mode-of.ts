@@ -8,7 +8,10 @@ import type Git from '../../git'
  */
 export function baseModeOf(value: unknown): Git.BaseMode | null {
   const isMode =
-    value === 'session' || value === 'uncommitted' || value === 'branch'
+    value === 'session' ||
+    value === 'uncommitted' ||
+    value === 'staged' ||
+    value === 'branch'
 
   return isMode ? value : null
 }

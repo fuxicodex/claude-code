@@ -6,5 +6,6 @@ import type Types from '../types'
 export const GIT_BASE_MODES: readonly Types.BaseMode[] = Object.freeze([
   'session',
   'uncommitted',
+  'staged',
   'branch',
 ])

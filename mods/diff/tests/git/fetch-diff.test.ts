@@ -166,6 +166,69 @@ describe('fetch-diff', () => {
     ).toEqual(['fresh.txt'])
   })
 
+  test('staged mode: rows from --cached, no untracked, baseRef --cached', async () => {
+    const deps = depsOf({
+      'rev-parse --verify --quiet HEAD': Fixtures.ok('abc\n'),
+      '--cached --shortstat': Fixtures.ok(' 1 file changed, 3 insertions(+)'),
+      '--cached --numstat': Fixtures.ok('3\t0\ta.ts\0'),
+      'ls-files': Fixtures.ok('scratch.txt\0'),
+    })
+
+    const outcome = await Git.fetchDiff(deps, 'staged')
+
+    const data = outcome.kind === 'data' ? outcome.data : null
+
+    expect(data?.baseRef).toBe('--cached')
+    expect(data?.isUnborn).toBe(false)
+    expect(data?.isUntrackedWithheld).toBe(false)
+
+    expect(data?.files.map(file => [file.path, file.isUntracked])).toEqual([
+      ['a.ts', false],
+    ])
+
+    expect(data?.stats).toEqual({
+      filesCount: 1,
+      linesAdded: 3,
+      linesRemoved: 0,
+    })
+
+    expect(deps.argvs.some(argv => argv.includes('ls-files'))).toBe(false)
+  })
+
+  test('staged mode on an unborn HEAD falls to the unborn tier', async () => {
+    const outcome = await Git.fetchDiff(
+      depsOf({
+        'rev-parse --verify --quiet HEAD': Fixtures.PROBE_MISSED,
+        '--cached --shortstat': Fixtures.ok(' 1 file changed, 3 insertions(+)'),
+        '--cached --numstat': Fixtures.ok('3\t0\tstaged.ts\0'),
+        '--submodule=short --numstat': Fixtures.ok('2\t1\tstaged.ts\0'),
+        'ls-files': Fixtures.ok(),
+      }),
+      'staged',
+    )
+
+    const data = outcome.kind === 'data' ? outcome.data : null
+
+    expect(data?.isUnborn).toBe(true)
+    expect(data?.baseRef).toBe('--cached')
+
+    expect(
+      data?.files.map(file => [file.path, file.added, file.removed]),
+    ).toEqual([['staged.ts', 4, 0]])
+  })
+
+  test('staged mode: a withheld --cached numstat answers unavailable', async () => {
+    expect(
+      await Git.fetchDiff(
+        depsOf({
+          'rev-parse --verify --quiet HEAD': Fixtures.ok('abc\n'),
+          '--cached --shortstat': Fixtures.ok(' 1 file changed, 3 insertions(+)'),
+        }),
+        'staged',
+      ),
+    ).toEqual({ kind: 'unavailable' })
+  })
+
   test('past 500 files: totals only, no numstat, no untracked', async () => {
     const deps = depsOf({
       'HEAD --shortstat': Fixtures.ok(' 501 files changed, 9 insertions(+)'),

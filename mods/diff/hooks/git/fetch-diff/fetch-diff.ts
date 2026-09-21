@@ -29,5 +29,9 @@ export async function fetchDiff(
   const context = Tiers.fetchContextOf(deps, mode)
   const isBranch = mode === 'branch'
 
+  if (mode === 'staged') {
+    return Tiers.stagedTier(context)
+  }
+
   return isBranch ? Tiers.branchTier(context) : Tiers.workingTreeTier(context)
 }

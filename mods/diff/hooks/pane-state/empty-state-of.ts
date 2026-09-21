@@ -50,6 +50,8 @@ export function emptyStateOf(
   switch (data.mode) {
     case 'uncommitted':
       return { headline: 'No uncommitted changes', hint: null }
+    case 'staged':
+      return { headline: 'Nothing staged', hint: null }
     case 'branch':
       if (data.source.kind === 'branch') {
         return {

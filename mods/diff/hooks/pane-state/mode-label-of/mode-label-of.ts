@@ -31,6 +31,8 @@ export function modeLabelOf(
         return 'this session'
       case 'uncommitted':
         return `uncommitted (vs ${base})`
+      case 'staged':
+        return `staged (vs ${base})`
       case 'branch':
         if (source?.kind === 'branch') {
           return `branch vs ${source.baseBranch}`
