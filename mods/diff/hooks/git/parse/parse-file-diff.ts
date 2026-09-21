@@ -23,16 +23,18 @@ export function parseFileDiff(stdout: string): Types.FileHunks {
 
   const rows = stdout.split('\n')
 
-  const headerRows = rows.flatMap((row, at) =>
-    HUNK_HEADER.test(row) ? [at] : [],
-  )
+  const headerRows = rows.flatMap((row, at) => {
+    const matches = HUNK_HEADER.exec(row)
+
+    return matches ? [{ at, groups: matches.groups }] : []
+  })
 
   return {
     ...cutHunks(
-      headerRows.map((at, ordinal) =>
+      headerRows.map(({ at, groups }, ordinal) =>
         hunkOf(
-          HUNK_HEADER.exec(rows[at] ?? '')?.groups,
-          rows.slice(at + 1, headerRows[ordinal + 1]).filter(isBodyLine),
+          groups,
+          rows.slice(at + 1, headerRows[ordinal + 1]?.at).filter(isBodyLine),
         ),
       ),
     ),
